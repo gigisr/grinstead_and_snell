@@ -1,0 +1,245 @@
+---
+title: "Introduction to Probability\nGrinstead and Snell"
+output: 
+  html_document: 
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library( tidyverse )
+```
+
+# Chapter 1 Discrete Probability Distrobutions
+
+## 1.1 Simulation of Discrete Probabilities
+
+Page 2 Simulation
+
+```{r p2_simulation, include=FALSE}
+sim_func <- function( n, probabilities, outcomes = c() ) {
+
+  if ( sum( probabilities ) != 1 ) {
+    return( print( "The probabilities don't add to 1!" ) )
+  }
+  
+  if ( length( outcomes ) != length( probabilities ) ) {
+    outcomes <- 2:length( probabilities ) + 1
+  }
+  
+  random_values <- runif( n )
+  
+  output_values <- random_values
+  
+  check_value <- 0
+  for ( i in 1:length( probabilities ) ) {
+    check_value <- check_value + probabilities[ i ]
+    
+    output_values[ random_values <= check_value ] <- outcomes[ i ]
+    random_values[ random_values <= check_value ] <- 1.1
+  }
+  
+  if ( sum( outcomes == 2:length( probabilities ) + 1 ) == length( probabilities ) ) {
+    output_values <- output_values - 1
+  }
+  
+  return( output_values )
+  
+}
+
+sim_func( 100, c( 0.5, 0.3,0.1, 0.1 ), c( "A", "B", "C", "D" ) )
+sim_func( 100, c( 0.5, 0.3,0.1, 0.1 ) )
+```
+
+Example 1.1 (Random Number Generation)
+
+```{r ex_1.1}
+runif( 20 )
+```
+
+Example 1.2 (Coin Tossing)
+```{r ex_1.2}
+outcomes <- sim_func( 20, c( 0.5, 0.5 ), c( "H", "T" ) )
+outcomes
+paste( outcomes, collapse = "" )
+
+length( outcomes[ outcomes == "H" ] ) / length( outcomes )
+
+outcomes <- sim_func( 1000, c( 0.5, 0.5 ), c( "H", "T" ) )
+length( outcomes[ outcomes == "H" ] ) / length( outcomes )
+
+outcomes <- sim_func( 10000, c( 0.5, 0.5 ), c( "H", "T" ) )
+length( outcomes[ outcomes == "H" ] ) / length( outcomes )
+```
+
+Example 1.3 (Dice Rolling)
+```{r ex_1.3}
+demere1 <- function ( n ) {
+  
+  outcomes <- sim_func( 4 * n, c( 1/6, 1/6, 1/6, 1/6, 1/6, 1/6 ) ) %>% 
+    matrix( ncol = 4 ) %>% 
+    apply( 1, max )
+  
+  proportion <- length( outcomes[ outcomes == 6 ] ) / length( outcomes )
+  
+  return( proportion )
+  
+}
+
+demere1( 10 )
+demere1( 1000 )
+demere1( 10000 )
+
+demere2 <- function ( n_rolls, n_simulations ) {
+  
+  outcomes <- sim_func( n_rolls * n_simulations * 2, c( 1/6, 1/6, 1/6, 1/6, 1/6, 1/6 ), c( 1, 2, 3, 4, 5, 6 ) ) %>% 
+    matrix( ncol = 2 )
+  outcomes <- paste( outcomes[,1], outcomes[,2], sep = "" )
+  
+  outcomes[ outcomes != "66" ] <- 0
+  outcomes[ outcomes == "66" ] <- 1
+  
+  outcomes <- matrix( outcomes, ncol = n_rolls ) %>% 
+    apply( 1, max )
+  
+  proportions <- length( outcomes[ outcomes == 1 ] ) / length( outcomes )
+  
+  return( proportions )
+  
+}
+
+demere2( 4, 10 )
+demere2( 4, 1000 )
+demere2( 4, 10000 )
+demere2( 25, 10 )
+demere2( 25, 1000 )
+demere2( 25, 10000 )
+```
+
+Example 1.4 (Heads or Tails)
+```{r}
+outcomes <- sim_func( 40, c( 0.5, 0.5 ), c( "H", "T" ) )
+paste( outcomes, collapse = "" )
+
+values <- outcomes
+
+values[ outcomes == "H" ] <- 1
+values[ outcomes == "T" ] <- -1
+
+outcomes_cumsum <- cumsum( values )
+
+ggplot( data_frame( outcomes_cumsum ) ) +
+  geom_line( aes( x = 1:length( outcomes_cumsum ), y = outcomes_cumsum ) ) + 
+  geom_hline( yintercept = 0 )
+
+ggplot( data_frame( outcomes_cumsum ) ) +
+  geom_histogram( aes( x = outcomes_cumsum ) )
+```
+
+### Exercises
+
+Exercise 1
+```{r}
+coin_tosses <- function ( n ) {
+  
+  full_loops <- floor( n / 100 )
+  
+  random_vals <- runif( n )
+  output_vals <- random_vals
+  output_vals[ random_vals < 0.5 ] <- "H"
+  output_vals[ random_vals >= 0.5 ] <- "T"
+  
+  print( "Proportion of heads - 0.5" )
+  if ( full_loops > 0 ) {
+    
+    for ( loop in 1:full_loops ) {
+      
+      proportion <- output_vals[ 1:(loop * 100) ]
+      proportion <- -0.5 + length( proportion[ proportion == "H" ] ) / length( proportion )
+      print( proportion )
+      
+    }
+    
+  }
+  
+  print( "Number of heads - half the number of tosses" )
+  if ( full_loops > 0 ) {
+    
+    for ( loop in 1:full_loops ) {
+      
+      proportion <- output_vals[ 1:(loop * 100) ]
+      proportion <- length( proportion[ proportion == "H" ] ) - length( proportion ) / 2
+      print( proportion )
+      
+    }
+    
+  }
+  
+  print( "The final proportion of heads - 0.5" )
+  proportion <- -0.5 + length( output_vals[ output_vals == "H" ] ) / length( output_vals )
+  print( proportion )
+  
+  print( "The final number of heads - half the number of tosses" )
+  proportion <- length( output_vals[ output_vals == "H" ] ) - length( output_vals ) / 2
+  print( proportion )
+  
+  return( "End" )
+  
+}
+
+coin_tosses( 400 )
+coin_tosses( 750 )
+coin_tosses( 1750 )
+```
+
+The proportion tends towards 0 whereas the actual value still fluctuates around 0.
+
+Exercise 2
+```{r}
+coin_tosses <- function ( n ) {
+  
+  random_vals <- runif( n * 100 )
+  random_vals <- matrix( random_vals, nrow = 100 ) %>% 
+    as_tibble
+  output_vals <- random_vals
+  
+  output_vals[ random_vals < 0.5 ] <- "H"
+  output_vals[ random_vals >= 0.5 ] <- "T"
+  
+  output_vals <- apply( X = output_vals ,1
+                       ,FUN = function( x ) length( which( x == 'H' ) ) / length( x ) )
+  
+  proportion <- length( output_vals[ ( output_vals >= 0.4 ) & ( output_vals <= 0.6 ) ] ) / length( output_vals )
+  
+  return( proportion )
+  
+}
+
+coin_tosses( 5 )
+coin_tosses( 10 )
+coin_tosses( 50 )
+coin_tosses( 75 )
+coin_tosses( 100 )
+```
+
+So that approximately 95 out of 100 times the proportion of heads is between 0.4 and 0.6 we need a n of value at least 75.
+
+Exercise 3
+```{r}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
