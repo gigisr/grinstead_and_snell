@@ -1,3 +1,15 @@
+# My gitignores
+.ipynb_checkpoints/*
+*.pdf
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.xlsb
+*.xlsm
+*.doc
+*.ppt
+
 # History files
 .Rhistory
 .Rapp.history
